@@ -1,0 +1,77 @@
+---
+title: "Examples"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{patentsview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Patents endpoint
+
+Which patents have been cited by more than 500 US patents?
+
+```{r}
+library(patentsview)
+
+search_pv(query = qry_funs$gt(patent_num_cited_by_us_patents = 500))
+```
+
+How many distinct inventors are represented by these highly-cited patents?
+
+```{r}
+# Setting subent_cnts = TRUE will give us the subentity counts. Since inventors 
+# are subentities for the patents endpoint, this means we will get their counts.
+search_pv(query = qry_funs$gt(patent_num_cited_by_us_patents = 500),
+          fields = c("patent_number", "inventor_id"), subent_cnts = TRUE)
+```
+
+Where geographically have Microsoft inventors been coming from over the past 20 years?
+
+```{r}
+# Write the query
+query <- with_qfuns(
+  and(
+    gte(patent_date = "2007-07-25"), # Dates are in yyyy-mm-dd format 
+    contains(assignee_organization = "microsoft")
+  )
+)
+
+# Create a field list
+inv_fields <- get_fields(endpoint = "patents", groups = "inventors")
+fields <- c(inv_fields, "patent_number")
+
+# Pull the data
+pv_out <- search_pv(query = query, fields = fields, all_pages = TRUE)
+
+# Unnest the inventor list column
+unnest_pv_data(data = pv_out$data, pk = "patent_number")
+```
+
+## Inventors endpoint
+
+Return patent numbers and titles with at least one inventor whose location was Chicago, IL.<sup><a href="#fn1" id="ref1">1</a></sup>
+
+```{r}
+search_pv(query = '{"_and":[{"location_city":"Chicago"},{"location_state":"IL"}]}',
+          endpoint = "inventors", fields = c("patent_number", "patent_title"))
+```
+
+## Assignees endpoint
+
+Which assignees have an interest in beer?
+
+```{r}
+search_pv(query = qry_funs$text_phrase(patent_title = "beer"), 
+          endpoint = "assignees")
+```
+
+*** 
+<sup id="fn1">1</sup> Example taken from http://www.patentsview.org/api/inventor.html<sup><a href="#ref1">back</a></sup>
