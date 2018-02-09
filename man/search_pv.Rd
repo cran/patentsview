@@ -6,17 +6,16 @@
 \usage{
 search_pv(query, fields = NULL, endpoint = "patents", subent_cnts = FALSE,
   mtchd_subent_only = TRUE, page = 1, per_page = 25, all_pages = FALSE,
-  sort = NULL, method = "GET", error_browser = getOption("pv_browser"),
-  ...)
+  sort = NULL, method = "GET", error_browser = NULL, ...)
 }
 \arguments{
 \item{query}{The query that the API will use to filter records. \code{query}
  can come in any one of the following forms:
  \itemize{
-   \item A character string with valid JSON\cr
+   \item A character string with valid JSON. \cr
    E.g., \code{'{"_gte":{"patent_date":"2007-01-04"}}'}
 
-   \item A list which will be converted to JSON by \code{search_pv}\cr
+   \item A list which will be converted to JSON by \code{search_pv}. \cr
    E.g., \code{list("_gte" = list("patent_date" = "2007-01-04"))}
 
    \item An object of class \code{pv_query}, which you create by calling one
@@ -32,9 +31,8 @@ returned. Acceptable fields for a given endpoint can be found at the API's
 online documentation (e.g., check out the field list for the
 \href{http://www.patentsview.org/api/patent.html#field_list}{patents
 endpoint}) or by viewing the \code{fieldsdf} data frame
-(\code{View(patentsview::fieldsdf)}). You can also use
-\code{\link{get_fields}} to list out the fields available for a given
-endpoint.}
+(\code{View(fieldsdf)}). You can also use \code{\link{get_fields}} to list
+out the fields available for a given endpoint.}
 
 \item{endpoint}{The web service resource you wish to search. \code{endpoint}
 must be one of the following: "patents", "inventors", "assignees",
@@ -72,25 +70,7 @@ You must include any fields that you wish to sort by in \code{fields}.}
 Possible values include "GET" or "POST". Use the POST method when
 your query is very long (say, over 2,000 characters in length).}
 
-\item{error_browser}{The program used to view the HTML error
- messages sent by the API. This should be one of the following:
- \itemize{
-   \item The string "false" (the default), which turns error browsing off.
-   Instead of viewing the HTML in this case, you will get a portion of the
-   parsed HTML text returned to you as an R error.
-
-   \item The name of the program to use to view the HTML error message. If
-   the name of the program is on your PATH, just specify the program name
-   (e.g., \code{error_browser = "chrome"}). Otherwise, include the full
-   path to the program.
-
-   \item An R function to be called to invoke the browser (e.g.,\cr
-   \code{error_browser = rstudioapi::viewer})
-
-   \item Under Windows, a value of \code{NULL} is allowed and implies that
-   the file association mechanism will be used to determine which browser is
-   used.
- }}
+\item{error_browser}{Deprecated}
 
 \item{...}{Arguments passed along to httr's \code{\link[httr]{GET}} or
 \code{\link[httr]{POST}} function.}
@@ -122,26 +102,30 @@ the user's query.
 \examples{
 search_pv(query = '{"_gt":{"patent_year":2010}}')
 
-search_pv(query = qry_funs$gt(patent_year = 2010),
-          fields = get_fields("patents", c("patents", "assignees")))
+search_pv(
+  query = qry_funs$gt(patent_year = 2010),
+  fields = get_fields("patents", c("patents", "assignees"))
+)
 
-search_pv(query = qry_funs$gt(patent_year = 2010),
-          method = "POST", fields = "patent_number",
-          sort = c("patent_number" = "asc"))
+search_pv(
+  query = qry_funs$gt(patent_year = 2010),
+  method = "POST",
+  fields = "patent_number",
+  sort = c("patent_number" = "asc")
+)
 
-search_pv(query = qry_funs$eq(inventor_last_name = "crew"),
-          all_pages = TRUE)
+search_pv(
+  query = qry_funs$eq(inventor_last_name = "crew"),
+  all_pages = TRUE
+)
 
-search_pv(query = qry_funs$contains(inventor_last_name = "smith"),
-          endpoint = "assignees")
+search_pv(
+  query = qry_funs$contains(inventor_last_name = "smith"),
+  endpoint = "assignees"
+)
 
-search_pv(query = qry_funs$contains(inventor_last_name = "smith"),
-          config = httr::timeout(40))
-
-\dontrun{
-
-# Will view error message in RStudio's viewer pane:
-search_pv(query = with_qfuns(not(text_any(patent_title = "hi"))),
-          error_browser = rstudioapi::viewer)
-}
+search_pv(
+  query = qry_funs$contains(inventor_last_name = "smith"),
+  config = httr::timeout(40)
+)
 }

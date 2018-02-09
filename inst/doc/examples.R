@@ -12,8 +12,11 @@ search_pv(query = qry_funs$gt(patent_num_cited_by_us_patents = 500))
 ## ------------------------------------------------------------------------
 # Setting subent_cnts = TRUE will give us the subentity counts. Since inventors 
 # are subentities for the patents endpoint, this means we will get their counts.
-search_pv(query = qry_funs$gt(patent_num_cited_by_us_patents = 500),
-          fields = c("patent_number", "inventor_id"), subent_cnts = TRUE)
+search_pv(
+  query = qry_funs$gt(patent_num_cited_by_us_patents = 500),
+  fields = c("patent_number", "inventor_id"), 
+  subent_cnts = TRUE
+)
 
 ## ------------------------------------------------------------------------
 # Write the query
@@ -35,10 +38,15 @@ pv_out <- search_pv(query = query, fields = fields, all_pages = TRUE)
 unnest_pv_data(data = pv_out$data, pk = "patent_number")
 
 ## ------------------------------------------------------------------------
-search_pv(query = '{"_and":[{"location_city":"Chicago"},{"location_state":"IL"}]}',
-          endpoint = "inventors", fields = c("patent_number", "patent_title"))
+search_pv(
+  query = '{"_and":[{"location_city":"Chicago"},{"location_state":"IL"}]}',
+  endpoint = "inventors", 
+  fields = c("patent_number", "patent_title")
+)
 
 ## ------------------------------------------------------------------------
-search_pv(query = qry_funs$text_phrase(patent_title = "beer"), 
-          endpoint = "assignees")
+search_pv(
+  query = qry_funs$text_phrase(patent_title = "beer"), 
+  endpoint = "assignees"
+)
 

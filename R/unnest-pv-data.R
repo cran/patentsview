@@ -17,8 +17,10 @@
 #' get_ok_pk(endpoint = "cpc_subsections") # Returns "cpc_subsection_id"
 #' @export
 get_ok_pk <- function(endpoint) {
-  es_eps <- c("uspc_mainclasses" = "uspc_mainclass_id",
-              "nber_subcategories" = "nber_subcategory_id")
+  es_eps <- c(
+    "uspc_mainclasses" = "uspc_mainclass_id",
+    "nber_subcategories" = "nber_subcategory_id"
+  )
   ifelse(
     endpoint %in% names(es_eps),
     es_eps[[endpoint]],
@@ -26,7 +28,7 @@ get_ok_pk <- function(endpoint) {
   )
 }
 
-#' Unnest PatentsView Data
+#' Unnest PatentsView data
 #'
 #' This function converts a single data frame that has subentity-level list
 #' columns in it into multiple data frames, one for each entity/subentity.
@@ -58,33 +60,36 @@ get_ok_pk <- function(endpoint) {
 #' @export
 unnest_pv_data <- function(data, pk = get_ok_pk(names(data))) {
 
-  asrt("pv_data_result" %in% class(data),
-       "Wrong input type for data...See example for correct input type")
+  validate_pv_data(data)
 
   df <- data[[1]]
 
-  asrt(pk %in% colnames(df),
-       pk, " not in primary entity data frame...Did you include it in your ",
-       "fields list?")
+  asrt(
+    pk %in% colnames(df),
+    pk, " not in primary entity data frame...Did you include it in your ",
+    "fields list?"
+  )
 
   prim_ent_var <- !vapply(df, is.list, logical(1))
 
   sub_ent_df <- df[, !prim_ent_var, drop = FALSE]
   sub_ents <- colnames(sub_ent_df)
 
-  ok_pk <- get_ok_pk(endpoint = names(data))
+  ok_pk <- get_ok_pk(names(data))
 
-  out_sub_ent <- sapply(sub_ents, function(x) {
+  out_sub_ent <- lapply2(sub_ents, function(x) {
     temp <- sub_ent_df[[x]]
-    asrt(length(unique(df[, pk])) == length(temp),
-         pk, " cannot act as a primary key because it is not a ",
-         "unique identifier.\n\nTry using ", ok_pk, " instead.")
+    asrt(
+      length(unique(df[, pk])) == length(temp), pk,
+      " cannot act as a primary key because it is not a unique identifier.\n\n",
+      "Try using ", ok_pk, " instead."
+    )
     names(temp) <- df[, pk]
     xn <- do.call("rbind", temp)
     xn[, pk] <- gsub("\\.[0-9]*$", "", rownames(xn))
     rownames(xn) <- NULL
     xn
-  }, USE.NAMES = TRUE, simplify = FALSE)
+  })
 
   prim_ent <- names(data)
   out_sub_ent[[prim_ent]] <- df[, prim_ent_var, drop = FALSE]

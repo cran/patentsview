@@ -4,7 +4,8 @@ print.pv_request <- function(x, ...) {
     "#### An HTTP request where:\n\n",
     "Method: ", x$method, "\n",
     "URL: ", x$url,
-    ifelse("body" %in% names(x), paste0("\nBody: ", x$body), ""), sep = ""
+    ifelse("body" %in% names(x), paste0("\nBody: ", x$body), ""),
+    sep = ""
   )
 }
 
@@ -14,26 +15,31 @@ print.pv_data_result <- function(x, ...) {
 
   k <- vapply(names(df), function(y) class(df[, y]), FUN.VALUE = character(1))
 
-  dat_level <- c(patents = "patent", inventors = "inventor",
-                 assignees = "assignee",  locations = "location",
-                 cpc_subsections = "CPC subsection",
-                 uspc_mainclasses = "USPC main class",
-                 nber_subcategories = "NBER subcategory")
+  dat_level <- c(
+    patents = "a patent", inventors = "an inventor",
+    assignees = "an assignee", locations = "a location",
+    cpc_subsections = "a CPC subsection", uspc_mainclasses = "a USPC main class",
+    nber_subcategories = "a NBER subcategory"
+  )
 
   lst <- ifelse("list" %in% k, " (with list column(s) inside) ", " ")
 
   cat(
-    "#### A list with a single data frame", lst, "on the ",
-    dat_level[[names(x)[1]]], " data level:\n\n",
+    "#### A list with a single data frame", lst, "on ",
+    dat_level[[names(x)[1]]], " level:\n\n",
     sep = ""
   )
 
-  utils::str(x, vec.len = 1, max.level = 2, give.attr = FALSE)
+  utils::str(
+    x, vec.len = 1, max.level = 2, give.attr = FALSE, strict.width = "cut"
+  )
 }
 
 #' @export
 print.pv_relay_db <- function(x, ...) {
-  utils::str(x, vec.len = 1, max.level = 2, give.attr = FALSE)
+  utils::str(
+    x, vec.len = 1, max.level = 2, give.attr = FALSE, strict.width = "cut"
+  )
 }
 
 #' @export
