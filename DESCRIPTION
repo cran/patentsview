@@ -1,7 +1,7 @@
 Package: patentsview
 Type: Package
 Title: An R Client to the 'PatentsView' API
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: person("Christopher", "Baker", email = "chriscrewbaker@gmail.com",
     role = c("aut", "cre"))
 Encoding: UTF-8
@@ -19,8 +19,8 @@ Suggests: knitr, rmarkdown, testthat, tidyr
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1.9000
 NeedsCompilation: no
-Packaged: 2018-02-09 16:45:18 UTC; cbaker
+Packaged: 2018-03-14 00:01:56 UTC; cbaker
 Author: Christopher Baker [aut, cre]
 Maintainer: Christopher Baker <chriscrewbaker@gmail.com>
 Repository: CRAN
-Date/Publication: 2018-02-09 17:00:51 UTC
+Date/Publication: 2018-03-14 04:06:12 UTC
