@@ -4,9 +4,20 @@
 \alias{search_pv}
 \title{Search PatentsView}
 \usage{
-search_pv(query, fields = NULL, endpoint = "patents", subent_cnts = FALSE,
-  mtchd_subent_only = TRUE, page = 1, per_page = 25, all_pages = FALSE,
-  sort = NULL, method = "GET", error_browser = NULL, ...)
+search_pv(
+  query,
+  fields = NULL,
+  endpoint = "patents",
+  subent_cnts = FALSE,
+  mtchd_subent_only = TRUE,
+  page = 1,
+  per_page = 25,
+  all_pages = FALSE,
+  sort = NULL,
+  method = "GET",
+  error_browser = NULL,
+  ...
+)
 }
 \arguments{
 \item{query}{The query that the API will use to filter records. \code{query}
@@ -20,7 +31,7 @@ search_pv(query, fields = NULL, endpoint = "patents", subent_cnts = FALSE,
 
    \item An object of class \code{pv_query}, which you create by calling one
    of the functions found in the \code{\link{qry_funs}} list...See the
-   \href{http://ropensci.github.io/patentsview/articles/writing-queries.html}{writing
+   \href{https://docs.ropensci.org/patentsview/articles/writing-queries.html}{writing
    queries vignette} for details.\cr
    E.g., \code{qry_funs$gte(patent_date = "2007-01-04")}
  }}
@@ -29,7 +40,7 @@ search_pv(query, fields = NULL, endpoint = "patents", subent_cnts = FALSE,
 A value of \code{NULL} indicates that the default fields should be
 returned. Acceptable fields for a given endpoint can be found at the API's
 online documentation (e.g., check out the field list for the
-\href{http://www.patentsview.org/api/patent.html#field_list}{patents
+\href{https://patentsview.org/apis/api-endpoints/patents}{patents
 endpoint}) or by viewing the \code{fieldsdf} data frame
 (\code{View(fieldsdf)}). You can also use \code{\link{get_fields}} to list
 out the fields available for a given endpoint.}
@@ -40,7 +51,7 @@ must be one of the following: "patents", "inventors", "assignees",
 
 \item{subent_cnts}{Do you want the total counts of unique subentities to be
 returned? This is equivalent to the \code{include_subentity_total_counts}
-parameter found \href{http://www.patentsview.org/api/query-language.html#options_parameter}{here}.}
+parameter found \href{https://patentsview.org/apis/api-query-language}{here}.}
 
 \item{mtchd_subent_only}{Do you want only the subentities that match your
 query to be returned? A value of \code{TRUE} indicates that the subentity
@@ -48,7 +59,7 @@ has to meet your query's requirements in order for it to be returned, while
 a value of \code{FALSE} indicates that all subentity data will be returned,
 even those records that don't meet your query's requirements. This is
 equivalent to the \code{matched_subentities_only} parameter found
-\href{http://www.patentsview.org/api/query-language.html#options_parameter}{here}.}
+\href{https://patentsview.org/apis/api-query-language}{here}.}
 
 \item{page}{The page number of the results that should be returned.}
 

@@ -4,8 +4,10 @@ eps <- get_endpoints()
 
 test_that("API returns expected df names for all endpoints", {
   skip_on_cran()
+  skip_on_ci()
 
   z <- vapply(eps, function(x) {
+    Sys.sleep(3)
     j <- search_pv("{\"patent_number\":\"5116621\"}", endpoint = x)
     names(j[[1]])
   }, FUN.VALUE = character(1), USE.NAMES = FALSE)
@@ -15,6 +17,7 @@ test_that("API returns expected df names for all endpoints", {
 
 test_that("DSL-based query returns expected results", {
   skip_on_cran()
+  skip_on_ci()
 
   query <- with_qfuns(
     and(
@@ -33,10 +36,12 @@ test_that("DSL-based query returns expected results", {
 
 test_that("search_pv can pull all fields for all endpoints except locations", {
   skip_on_cran()
+  skip_on_ci()
 
   eps_no_loc <- eps[eps != "locations"]
 
   z <- lapply(eps_no_loc, function(x) {
+    Sys.sleep(3)
     search_pv(
       "{\"patent_number\":\"5116621\"}",
       endpoint = x,
@@ -47,21 +52,10 @@ test_that("search_pv can pull all fields for all endpoints except locations", {
   expect_true(TRUE)
 })
 
-# As per this issue: https://github.com/CSSIP-AIR/PatentsView-API/issues/24
-test_that("Locations endpoint throws custom error when asked for all avail. fields", {
+test_that("search_pv can return subent_cnts", {
+  # ...Though note this issue: https://github.com/CSSIP-AIR/PatentsView-API/issues/26
   skip_on_cran()
-
-  expect_error(
-    search_pv(
-      "{\"patent_number\":\"5116621\"}",
-      endpoint = "locations",
-      fields = get_fields("locations")
-    ), regexp = "the locations endpoint currently"
-  )
-})
-
-test_that("search_pv can return subent_cnts", { # though note this issue: https://github.com/CSSIP-AIR/PatentsView-API/issues/26
-  skip_on_cran()
+  skip_on_ci()
 
   out_spv <- search_pv(
     "{\"patent_number\":\"5116621\"}",
@@ -73,6 +67,7 @@ test_that("search_pv can return subent_cnts", { # though note this issue: https:
 
 test_that("Sort option works as expected", {
   skip_on_cran()
+  skip_on_ci()
 
   out_spv <- search_pv(
     qry_funs$gt(patent_date = "2015-01-01"),
@@ -89,16 +84,32 @@ test_that("Sort option works as expected", {
 
 test_that("search_pv can pull all fields by group for the locations endpoint", {
   skip_on_cran()
+  skip_on_ci()
 
   groups <- unique(fieldsdf[fieldsdf$endpoint == "locations", "group"])
 
   z <- lapply(groups, function(x) {
+    Sys.sleep(3)
     search_pv(
       '{"patent_number":"5116621"}',
-      endpoint = "locations",
-      fields = get_fields("locations", x)
+      endpoint = "inventors",
+      fields = get_fields("inventors", x)
     )
   })
 
    expect_true(TRUE)
+})
+
+test_that("search_pv properly encodes queries", {
+  skip_on_cran()
+  skip_on_ci()
+
+  # Covers https://github.com/ropensci/patentsview/issues/24
+  result <- search_pv(
+    query = with_qfuns(
+      begins(assignee_organization = "Johnson & Johnson")
+    )
+  )
+
+  expect_true(TRUE)
 })

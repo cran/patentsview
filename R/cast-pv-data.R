@@ -12,6 +12,7 @@ get_cast_fun <- function(data_type) {
     "date" = as.Date,
     "float" = as.numeric,
     "integer" = as.integer,
+    "int" = as.integer,
     "fulltext" = as_is
   )
 }
@@ -35,13 +36,19 @@ cast_one.default <- function(one, name, typesdf) NA
 cast_one.list <- function(one, name, typesdf) {
   first_df <- one[[1]]
   cols <- colnames(first_df)
-  fun_list <- lapply(cols, function(x) lookup_cast_fun(x, typesdf = typesdf))
+  fun_list <- sapply(
+    cols, function(x) lookup_cast_fun(x, typesdf = typesdf),
+    USE.NAMES = TRUE, simplify = FALSE
+  )
+  # Iterate over all dataframes in the list of dataframes
   lapply(one, function(df) {
-    casted_lst <- mapply(
-       function(df, fun_list) fun_list(df),
-        fun_list = fun_list, df = df,
-       SIMPLIFY = FALSE
-    )
+    # Kinda funky way to go about this, but I'm iterating over the columns in
+    # the dataframe, looking up the appropriate cast function for that column
+    # and casting it the vector as such, then binding these columns all back
+    # together with the call to as.data.frame shown below.
+    casted_lst <- lapply(cols, function(one_col_name) {
+      fun_list[[one_col_name]](df[[one_col_name]])
+    })
     as.data.frame(casted_lst, stringsAsFactors = FALSE, col.names = cols)
   })
 }

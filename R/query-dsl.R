@@ -58,7 +58,7 @@ create_not_fun <- function(fun) {
 #'
 #' A list of functions that make it easy to write PatentsView queries. See the
 #' details section below for a list of the 14 functions, as well as the
-#' \href{http://ropensci.github.io/patentsview/articles/writing-queries.html}{writing
+#' \href{https://docs.ropensci.org/patentsview/articles/writing-queries.html}{writing
 #' queries vignette} for further details.
 #'
 #' @details
@@ -138,6 +138,8 @@ qry_funs <- c(
 #' with: \code{list2env(qry_funs, envir = globalenv())}.
 #'
 #' @param code Code to evaluate. See example.
+#' @param envir Where should R look for objects present in \code{code} that
+#' aren't present in \code{\link{qry_funs}}.
 #'
 #' @return The result of \code{code} - i.e., your query.
 #'
@@ -165,4 +167,6 @@ qry_funs <- c(
 #' )
 #'
 #' @export
-with_qfuns <- function(code) eval(substitute(code), qry_funs)
+with_qfuns <- function(code, envir = parent.frame()) {
+  eval(substitute(code), qry_funs, envir)
+}
