@@ -1,115 +1,122 @@
-context("search_pv")
-
-eps <- get_endpoints()
-
-test_that("API returns expected df names for all endpoints", {
+test_that("DSL-based query works", {
   skip_on_cran()
-  skip_on_ci()
 
-  z <- vapply(eps, function(x) {
-    Sys.sleep(3)
-    j <- search_pv("{\"patent_number\":\"5116621\"}", endpoint = x)
-    names(j[[1]])
-  }, FUN.VALUE = character(1), USE.NAMES = FALSE)
-
-  expect_equal(eps, z)
-})
-
-test_that("DSL-based query returns expected results", {
-  skip_on_cran()
-  skip_on_ci()
-
+  vcr::local_cassette("dsl-query")
   query <- with_qfuns(
     and(
-      or(
-        gte(patent_date = "2014-01-01"),
-        lte(patent_date = "1978-01-01")
-      ),
-      text_phrase(patent_abstract = c("computer program", "dog leash"))
+      gte(patent_date = "2014-01-01"),
+      text_phrase(patent_abstract = "computer program")
     )
   )
-
   out <- search_pv(query)
-
-  expect_gt(out$query_results$total_patent_count, 1000)
+  expect_gt(out$query_results$total_hits, 100)
 })
 
-test_that("search_pv can pull all fields for all endpoints except locations", {
+test_that("can retrieve all fields for patent endpoint", {
   skip_on_cran()
-  skip_on_ci()
 
-  eps_no_loc <- eps[eps != "locations"]
-
-  z <- lapply(eps_no_loc, function(x) {
-    Sys.sleep(3)
-    search_pv(
-      "{\"patent_number\":\"5116621\"}",
-      endpoint = x,
-      fields = get_fields(x)
-    )
-  })
-
-  expect_true(TRUE)
-})
-
-test_that("search_pv can return subent_cnts", {
-  # ...Though note this issue: https://github.com/CSSIP-AIR/PatentsView-API/issues/26
-  skip_on_cran()
-  skip_on_ci()
-
-  out_spv <- search_pv(
-    "{\"patent_number\":\"5116621\"}",
-    fields = get_fields("patents", c("patents", "inventors")),
-    subent_cnts = TRUE
+  vcr::local_cassette("patent-all-fields")
+  out <- search_pv(
+    query = '{"patent_id":"5116621"}',
+    endpoint = "patent",
+    fields = get_fields("patent")
   )
-  expect_true(length(out_spv$query_results) == 2)
+  expect_equal(out$query_results$total_hits, 1)
 })
 
-test_that("Sort option works as expected", {
+test_that("sort works", {
   skip_on_cran()
-  skip_on_ci()
 
-  out_spv <- search_pv(
-    qry_funs$gt(patent_date = "2015-01-01"),
-    fields = get_fields("inventors", c("inventors")),
-    endpoint = "inventors",
-    sort = c("inventor_lastknown_latitude" = "desc"),
-    per_page = 100
+  vcr::local_cassette("sort")
+  out <- search_pv(
+    qry_funs$neq(assignee_id = ""),
+    fields = get_fields("assignee", groups = "assignees"),
+    endpoint = "assignee",
+    sort = c("assignee_lastknown_latitude" = "desc"),
+    size = 100
   )
-
-  lat <- as.numeric(out_spv$data$inventors$inventor_lastknown_latitude)
-
+  lat <- as.numeric(out$data$assignees$assignee_lastknown_latitude)
   expect_true(lat[1] >= lat[100])
 })
 
-test_that("search_pv can pull all fields by group for the locations endpoint", {
+test_that("URL encoding works", {
   skip_on_cran()
-  skip_on_ci()
 
-  groups <- unique(fieldsdf[fieldsdf$endpoint == "locations", "group"])
-
-  z <- lapply(groups, function(x) {
-    Sys.sleep(3)
-    search_pv(
-      '{"patent_number":"5116621"}',
-      endpoint = "inventors",
-      fields = get_fields("inventors", x)
-    )
-  })
-
-   expect_true(TRUE)
+  vcr::local_cassette("url-encoding")
+  organization <- "Johnson & Johnson International"
+  query <- with_qfuns(text_phrase(assignee_organization = organization))
+  out <- search_pv(query, endpoint = "assignee")
+  expect_equal(out$query_results$total_hits, 1)
 })
 
-test_that("search_pv properly encodes queries", {
+test_that("can retrieve HATEOAS links", {
   skip_on_cran()
-  skip_on_ci()
 
-  # Covers https://github.com/ropensci/patentsview/issues/24
-  result <- search_pv(
-    query = with_qfuns(
-      begins(assignee_organization = "Johnson & Johnson")
+  vcr::local_cassette("hateoas")
+  out <- retrieve_linked_data(
+    "https://search.patentsview.org/api/v1/cpc_group/G01S7:4811/"
+  )
+  expect_equal(out$query_results$total_hits, 1)
+})
+
+test_that("after parameter works for manual paging", {
+  skip_on_cran()
+
+  vcr::local_cassette("after-paging")
+  query <- qry_funs$eq(patent_date = "2000-01-04")
+  sort <- c("patent_id" = "asc")
+
+  first_page <- search_pv(query, sort = sort, size = 100)
+  expect_gt(first_page$query_results$total_hits, 100)
+
+  last_id <- first_page$data$patents$patent_id[100]
+  second_page <- search_pv(query, after = last_id, sort = sort, size = 100)
+  expect_equal(nrow(second_page$data$patents), 100)
+
+  # No overlap
+  expect_false(any(
+    second_page$data$patents$patent_id %in% first_page$data$patents$patent_id
+  ))
+})
+
+test_that("all_pages works", {
+  skip_on_cran()
+
+  vcr::local_cassette("all-pages")
+  # Query that returns ~1500 results to test paging (2 pages)
+  query <- with_qfuns(
+    and(
+      gte(patent_date = "2021-01-05"),
+      lte(patent_date = "2021-01-05"),
+      eq(patent_type = "utility")
     )
   )
+  out <- search_pv(query, all_pages = TRUE)
+  expect_equal(nrow(out$data$patents), out$query_results$total_hits)
+  expect_gt(out$query_results$total_hits, 1000) # Ensure we actually paged
+})
 
-  expect_true(TRUE)
+test_that("field shorthand returns all requested fields", {
+  skip_on_cran()
+
+  vcr::local_cassette("field-shorthand")
+  query <- '{"patent_id":"5116621"}'
+  all_assignee_fields <- get_fields("patent", groups = "assignees")
+  out <- search_pv(query, fields = all_assignee_fields, method = "POST")
+
+  # Verify we got back all the assignee fields we asked for
+  returned_fields <- names(out$data$patents$assignees[[1]])
+  requested_fields <- sub("assignees\\.", "", all_assignee_fields)
+  expect_true(all(requested_fields %in% returned_fields))
+})
+
+# Keep one live test for basic connectivity/sanity check
+test_that("can connect to API", {
+  skip_on_cran()
+  skip_if_offline()
+  skip_if(Sys.getenv("PATENTSVIEW_API_KEY") == "", "No API key")
+  skip_if(Sys.getenv("PATENTSVIEW_API_KEY") == "test-api-key", "Using fake API key")
+
+  out <- search_pv('{"patent_id":"5116621"}', fields = "patent_id")
+  expect_equal(out$query_results$total_hits, 1)
 })
